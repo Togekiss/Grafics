@@ -48,11 +48,13 @@ float cam_pitch = 0; // up/down
 float cam_yaw = 0; //left/right
 
 				   //you may need to change these variables, depending on your system
-float MOVE_SPEED = 0.005f;
-float LOOK_SPEED = 0.005f;
+float MOVE_SPEED = 0.02f;
+float LOOK_SPEED = 0.02f;
 
 //LIGHTS
 vec3 g_light_dir(100, 100, 100);
+float g_light_distance = 500;
+float g_light_angle = 30;
 
 // ------------------------------------------------------------------------------------------
 // This function loads the teapot object from file, 
@@ -122,12 +124,18 @@ void drawEarth() {
 	GLuint u_projection = glGetUniformLocation(g_ShaderProgram, "u_projection");
 	GLuint u_color = glGetUniformLocation(g_ShaderProgram, "u_color");
 	GLuint u_light_dir = glGetUniformLocation(g_ShaderProgram, "u_light_dir");
+	GLuint u_light_color = glGetUniformLocation(g_ShaderProgram, "u_light_color");
+	GLuint u_cam_pos = glGetUniformLocation(g_ShaderProgram, "u_cam_pos");
+	GLuint u_shininess = glGetUniformLocation(g_ShaderProgram, "u_shininess");
+	GLuint u_ambient = glGetUniformLocation(g_ShaderProgram, "u_ambient");
 
 	//set MVP
 	mat4 translate_matrix = translate(mat4(1.0f), vec3(0.0, 0.0, -10.0));
 	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
-	mat4 projection_matrix = glm::perspective(60.0f, (float)(g_ViewportWidth / g_ViewportHeight), 0.1f, 50.0f);
+	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 50.0f);
 
+	float light_x = g_light_distance * sinf(g_light_angle); //TODO
+	float light_z = g_light_distance *  cosf(g_light_angle);
 
 	//send all values to shader
 	glUniformMatrix4fv(u_model, 1, GL_FALSE, glm::value_ptr(translate_matrix));
@@ -135,6 +143,11 @@ void drawEarth() {
 	glUniformMatrix4fv(u_projection, 1, GL_FALSE, glm::value_ptr(projection_matrix));
 	glUniform3f(u_color, 0.0, 1.0, 0.0);
 	glUniform3f(u_light_dir, g_light_dir.x, g_light_dir.y, g_light_dir.z);
+	glUniform3f(u_light_color, 1.0, 1.0, 1.0);
+	glUniform3f(u_cam_pos, cam_pos.x, cam_pos.y, cam_pos.z);
+	glUniform1f(u_shininess, 30.0);
+	glUniform1f(u_ambient, 0.1);
+
 
 
 	//bind VAO, draw, unbind
@@ -163,7 +176,7 @@ void drawMilkyWay() {
 	mat4 translate_matrix = translate(mat4(1.0f), cam_pos);
 	translate_matrix = scale(translate_matrix, vec3(10.0, 10.0, 10.0));
 	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
-	mat4 projection_matrix = glm::perspective(60.0f, (float)(g_ViewportWidth / g_ViewportHeight), 0.1f, 50.0f);
+	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 50.0f);
 
 
 	//send all values to shader
@@ -365,6 +378,7 @@ void update() {
 	}
 
 	// tell window to render
+	onDisplay();
 	glutPostRedisplay();
 }
 

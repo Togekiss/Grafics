@@ -1,8 +1,9 @@
 ﻿  main.cpp
-c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(309): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(310): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(149): warning C4305: 'argumento': truncamiento de 'double' a 'GLfloat'
 c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(322): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
 c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(323): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(335): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(336): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
   GLM: perspective function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
   GLM: rotate function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
   Graphics_1.vcxproj -> C:\Users\Marta\Documents\Grafics\P2\Graphics_1_2017-18\vs2017\Debug\Graphics_1.exe
