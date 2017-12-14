@@ -38,11 +38,12 @@ GLuint g_NumTriangles = 0; //  Numbre of triangles we are painting.
 
 GLuint texture_id;
 GLuint bg_texture_id;
+GLuint sun_texture_id;
 
 						   //global variables used for camera movement
 int key_flags[] = { 0, 0, 0, 0 }; //w, a, s, d
 float mouse_coords[] = { 0.0, 0.0 }; // x, y
-vec3 cam_pos(0, 0, 0); //camera always starts at center of world
+vec3 cam_pos(0, 0, 10); //camera always starts at center of world
 vec3 cam_target(0, 0, -1); //camera always starts looking down z-axis
 float cam_pitch = 0; // up/down
 float cam_yaw = 0; //left/right
@@ -51,10 +52,13 @@ float cam_yaw = 0; //left/right
 float MOVE_SPEED = 0.02f;
 float LOOK_SPEED = 0.02f;
 
+vec3 earth_pos(5, 0, -10);
+float earth_angle = 0;
+float sun_angle = 0;
+
 //LIGHTS
-vec3 g_light_dir(100, 100, 100);
-float g_light_distance = 500;
-float g_light_angle = 30;
+vec3 g_light_dir(1,1,1);
+
 
 // ------------------------------------------------------------------------------------------
 // This function loads the teapot object from file, 
@@ -101,6 +105,13 @@ void createGeometry()
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+	earth_angle = 0.0;
+
+	Image* sun_image = loadBMP("sunmap.bmp");
+	glGenTextures(1, &sun_texture_id);
+	glBindTexture(GL_TEXTURE_2D, sun_texture_id);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sun_image->width, sun_image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, sun_image->pixels);
 
 	Image* bg_image = loadBMP("milkyway.bmp");
 	glGenTextures(1, &bg_texture_id);
@@ -117,6 +128,11 @@ void drawEarth() {
 	// activate shader and VAO
 	glUseProgram(g_ShaderProgram);
 
+	GLuint u_texture = glGetUniformLocation(g_ShaderProgram, "u_texture");
+	glUniform1i(u_texture, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+
 	//find uniform locations (note this could be done once only, 
 	//using globals variables or a struct, and after compiling the shader
 	GLuint u_model = glGetUniformLocation(g_ShaderProgram, "u_model");
@@ -129,13 +145,13 @@ void drawEarth() {
 	GLuint u_shininess = glGetUniformLocation(g_ShaderProgram, "u_shininess");
 	GLuint u_ambient = glGetUniformLocation(g_ShaderProgram, "u_ambient");
 
-	//set MVP
-	mat4 translate_matrix = translate(mat4(1.0f), vec3(0.0, 0.0, -10.0));
-	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
-	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 50.0f);
 
-	float light_x = g_light_distance * sinf(g_light_angle); //TODO
-	float light_z = g_light_distance *  cosf(g_light_angle);
+	//set MVP
+	mat4 translate_matrix = translate(mat4(1.0f),earth_pos);
+	translate_matrix = scale(translate_matrix, vec3(0.5, 0.5, 0.5));
+	translate_matrix = rotate(translate_matrix, earth_angle, vec3(0, 1, 0));
+	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
+	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 500.0f);
 
 	//send all values to shader
 	glUniformMatrix4fv(u_model, 1, GL_FALSE, glm::value_ptr(translate_matrix));
@@ -148,6 +164,47 @@ void drawEarth() {
 	glUniform1f(u_shininess, 30.0);
 	glUniform1f(u_ambient, 0.1);
 
+
+	//bind VAO, draw, unbind
+	gl_bindVAO(g_Vao);
+	glDrawElements(GL_TRIANGLES, 3 * g_NumTriangles, GL_UNSIGNED_INT, 0);
+	gl_unbindVAO();
+
+	//unbind shader
+	glUseProgram(0);
+}
+
+void drawSun() {
+
+	// activate shader and VAO
+	glUseProgram(g_bg_ShaderProgram);
+
+	GLuint u_texture = glGetUniformLocation(g_ShaderProgram, "u_texture");
+	glUniform1i(u_texture, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sun_texture_id);
+
+	//find uniform locations (note this could be done once only, 
+	//using globals variables or a struct, and after compiling the shader
+	GLuint u_model = glGetUniformLocation(g_bg_ShaderProgram, "u_model");
+	GLuint u_view = glGetUniformLocation(g_bg_ShaderProgram, "u_view");
+	GLuint u_projection = glGetUniformLocation(g_bg_ShaderProgram, "u_projection");
+	GLuint u_color = glGetUniformLocation(g_bg_ShaderProgram, "u_color");
+	//GLuint u_light_dir = glGetUniformLocation(g_bg_ShaderProgram, "u_light_dir");
+
+	//set MVP
+	mat4 translate_matrix = translate(mat4(1.0f), vec3(0.0, 0.0, 0.0));
+	translate_matrix = rotate(translate_matrix, -sun_angle, vec3(0, 1, 0));
+	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
+	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 500.0f);
+
+
+	//send all values to shader
+	glUniformMatrix4fv(u_model, 1, GL_FALSE, glm::value_ptr(translate_matrix));
+	glUniformMatrix4fv(u_view, 1, GL_FALSE, glm::value_ptr(view_matrix));
+	glUniformMatrix4fv(u_projection, 1, GL_FALSE, glm::value_ptr(projection_matrix));
+	glUniform3f(u_color, 0.0, 1.0, 0.0);
+	//glUniform3f(u_light_dir, g_light_dir.x, g_light_dir.y, g_light_dir.z);
 
 
 	//bind VAO, draw, unbind
@@ -164,6 +221,11 @@ void drawMilkyWay() {
 	// activate shader and VAO
 	glUseProgram(g_bg_ShaderProgram);
 
+	GLuint u_texture = glGetUniformLocation(g_bg_ShaderProgram, "u_texture");
+	glUniform1i(u_texture, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, bg_texture_id);
+
 	//find uniform locations (note this could be done once only, 
 	//using globals variables or a struct, and after compiling the shader
 	GLuint u_model = glGetUniformLocation(g_bg_ShaderProgram, "u_model");
@@ -174,7 +236,7 @@ void drawMilkyWay() {
 
 	//set MVP
 	mat4 translate_matrix = translate(mat4(1.0f), cam_pos);
-	translate_matrix = scale(translate_matrix, vec3(10.0, 10.0, 10.0));
+	//translate_matrix = scale(translate_matrix, vec3(1.0, 1.0, 1.0));
 	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
 	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 50.0f);
 
@@ -202,40 +264,29 @@ void drawMilkyWay() {
 void onDisplay()
 {
 	// Clear the color buffer
-	//glClear(GL_COLOR_BUFFER_BIT);
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
-
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
-
-	GLuint u_texture = glGetUniformLocation(g_bg_ShaderProgram, "u_texture");
-
-	glUniform1i(u_texture, 0);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, bg_texture_id);
 
 	drawMilkyWay();
 
 
-	//EARTH
+	//SUN
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	u_texture = glGetUniformLocation(g_ShaderProgram, "u_texture");
+	drawSun();
 
-	glUniform1i(u_texture, 0);	
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture_id);
+	//EARTH
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	drawEarth();
-
 
 	// Swap the buffers so back buffer is on screen 
 	glutSwapBuffers();
@@ -376,6 +427,10 @@ void update() {
 		cam_pos = cam_pos - (side*MOVE_SPEED);
 		cam_target = cam_target - (side*MOVE_SPEED);
 	}
+
+	//earth_pos = earth_pos - vec3(-0.002, 0, 0.001);
+	earth_angle = earth_angle + 0.1;
+	sun_angle = sun_angle + 0.05;
 
 	// tell window to render
 	onDisplay();
