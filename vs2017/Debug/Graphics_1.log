@@ -1,11 +1,14 @@
 ﻿  main.cpp
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(190): warning C4305: 'argumento': truncamiento de 'double' a 'GLfloat'
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(391): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(392): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(404): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(405): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(449): warning C4244: '=': conversión de 'double' a 'float'; posible pérdida de datos
-c:\users\aleja\documents\la salle\4t enginyeria\grafics\grafics\src\main.cpp(450): warning C4244: '=': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(251): warning C4305: 'argumento': truncamiento de 'double' a 'GLfloat'
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(317): warning C4305: 'argumento': truncamiento de 'double' a 'GLfloat'
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(472): warning C4305: 'argumento': truncamiento de 'double' a 'GLfloat'
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(610): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(611): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(623): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(624): warning C4244: '=': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(668): warning C4244: '=': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(669): warning C4244: '=': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\marta\documents\grafics\p2\graphics_1_2017-18\src\main.cpp(670): warning C4244: '=': conversión de 'double' a 'float'; posible pérdida de datos
   GLM: rotate function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
   GLM: perspective function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
-  Graphics_1.vcxproj -> C:\Users\aleja\Documents\LA SALLE\4t ENGINYERIA\Grafics\Grafics\vs2017\Debug\Graphics_1.exe
+  Graphics_1.vcxproj -> C:\Users\Marta\Documents\Grafics\P2\Graphics_1_2017-18\vs2017\Debug\Graphics_1.exe

@@ -63,7 +63,7 @@ void main(void) {
 	if (NdotL < 0.1) {
 		vec3 diffuse_color = texture_light.xyz * NdotL;
 		vec3 specular_color = texture_light * u_light_color * RdotE * texture_spec * texture_normal;
-		final_color =  ambient_light + diffuse_color + specular_color;
+		final_color =  texture_light + ambient_light + diffuse_color + specular_color;
 	} else {
 		vec3 diffuse_color = texture_color.xyz * NdotL;
 		vec3 specular_color = texture_color * u_light_color * RdotE * texture_spec * texture_normal;
