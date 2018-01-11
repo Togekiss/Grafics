@@ -35,6 +35,7 @@ const vec3 g_backgroundColor(0.2f, 0.2f, 0.2f);
 GLuint g_ShaderProgram = 0; //shader identifier
 GLuint g_bg_ShaderProgram = 0; //shader identifier
 GLuint g_moon_ShaderProgram = 0; //shader identifier
+GLuint g_ufo_ShaderProgram = 0; //shader identifier
 GLuint g_Vao = 0; //vao
 GLuint g_ufo_Vao = 0; //vao
 GLuint g_NumTriangles = 0; //  Numbre of triangles we are painting.
@@ -69,7 +70,7 @@ vec3 planet_pos(0, 0, 0);
 vec3 earth_pos(5, 0, 0);
 vec3 sun_pos(0.0, 0.0, 0.0);
 vec3 moon_pos(10, 0, 0);
-vec3 ufo_pos(15, 0, 0);
+vec3 ufo_pos(3, 0, 0);
 float earth_angle = 0;
 float sun_angle = 0;
 float moon_angle = 0;
@@ -409,24 +410,24 @@ void drawMilkyWay() {
 void drawUfo() {
 
 	// activate shader and VAO
-	glUseProgram(g_ShaderProgram);
+	glUseProgram(g_ufo_ShaderProgram);
 
-	GLuint u_texture = glGetUniformLocation(g_ShaderProgram, "u_texture");
+	GLuint u_texture = glGetUniformLocation(g_ufo_ShaderProgram, "u_texture");
 	glUniform1i(u_texture, 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, ufo_texture_id);
 
-	GLuint u_texture_normal = glGetUniformLocation(g_ShaderProgram, "u_texture_normal");
+	GLuint u_texture_normal = glGetUniformLocation(g_ufo_ShaderProgram, "u_texture_normal");
 	glUniform1i(u_texture_normal, 1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, ufo_texture_normal);
 
-	GLuint u_texture_spec = glGetUniformLocation(g_ShaderProgram, "u_texture_spec");
+	GLuint u_texture_spec = glGetUniformLocation(g_ufo_ShaderProgram, "u_texture_spec");
 	glUniform1i(u_texture_spec, 2);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, ufo_texture_spec);
 
-	GLuint u_texture_light = glGetUniformLocation(g_ShaderProgram, "u_texture_light");
+	GLuint u_texture_light = glGetUniformLocation(g_ufo_ShaderProgram, "u_texture_light");
 	glUniform1i(u_texture_light, 3);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, ufo_texture_light);
@@ -434,16 +435,16 @@ void drawUfo() {
 
 	//find uniform locations (note this could be done once only, 
 	//using globals variables or a struct, and after compiling the shader
-	GLuint u_model = glGetUniformLocation(g_ShaderProgram, "u_model");
-	GLuint u_view = glGetUniformLocation(g_ShaderProgram, "u_view");
-	GLuint u_projection = glGetUniformLocation(g_ShaderProgram, "u_projection");
-	GLuint u_color = glGetUniformLocation(g_ShaderProgram, "u_color");
-	GLuint u_light_dir = glGetUniformLocation(g_ShaderProgram, "u_light_dir");
-	GLuint u_light_color = glGetUniformLocation(g_ShaderProgram, "u_light_color");
-	GLuint u_cam_pos = glGetUniformLocation(g_ShaderProgram, "u_cam_pos");
-	GLuint u_shininess = glGetUniformLocation(g_ShaderProgram, "u_shininess");
-	GLuint u_ambient = glGetUniformLocation(g_ShaderProgram, "u_ambient");
-	GLuint u_normal_matrix = glGetUniformLocation(g_ShaderProgram, "u_normal_matrix");
+	GLuint u_model = glGetUniformLocation(g_ufo_ShaderProgram, "u_model");
+	GLuint u_view = glGetUniformLocation(g_ufo_ShaderProgram, "u_view");
+	GLuint u_projection = glGetUniformLocation(g_ufo_ShaderProgram, "u_projection");
+	GLuint u_color = glGetUniformLocation(g_ufo_ShaderProgram, "u_color");
+	GLuint u_light_dir = glGetUniformLocation(g_ufo_ShaderProgram, "u_light_dir");
+	GLuint u_light_color = glGetUniformLocation(g_ufo_ShaderProgram, "u_light_color");
+	GLuint u_cam_pos = glGetUniformLocation(g_ufo_ShaderProgram, "u_cam_pos");
+	GLuint u_shininess = glGetUniformLocation(g_ufo_ShaderProgram, "u_shininess");
+	GLuint u_ambient = glGetUniformLocation(g_ufo_ShaderProgram, "u_ambient");
+	GLuint u_normal_matrix = glGetUniformLocation(g_ufo_ShaderProgram, "u_normal_matrix");
 
 	//set MVP
 	//earth_pos = vec3(10 * cos(earth_angle*0.01), 0, 10 * sin(earth_angle*0.01));
@@ -459,6 +460,7 @@ void drawUfo() {
 	mat3 normal_matrix = inverseTranspose((mat3(translate_matrix_earth)));
 
 	g_light_dir = sun_pos - ufo_pos;
+	cout << "light dir: " << g_light_dir.x << g_light_dir.y << g_light_dir.z << endl;
 
 	//send all values to shader
 	glUniformMatrix4fv(u_model, 1, GL_FALSE, glm::value_ptr(translate_matrix));
@@ -541,10 +543,12 @@ void loadResources()
 	Shader simpleShader("shader.vert", "shader.frag");
 	Shader bg_simpleShader("shader.vert", "bg_shader.frag");
 	Shader moon_simpleShader("shader.vert", "moon_shader.frag");
+	Shader ufo_simpleShader("shader.vert", "ufo_shader.frag");
 #endif
 	g_ShaderProgram = simpleShader.program;
 	g_bg_ShaderProgram = bg_simpleShader.program;
 	g_moon_ShaderProgram = moon_simpleShader.program;
+	g_ufo_ShaderProgram = ufo_simpleShader.program;
 
 	// create geometry for teapot
 	createGeometry();
@@ -668,8 +672,9 @@ void update() {
 	earth_angle = earth_angle + 0.1;
 	sun_angle = sun_angle + 0.05;
 	moon_angle = moon_angle + 0.1;
-	ufo_pos = cam_pos - vec3(0, 0.25, 0);
+	//ufo_pos = cam_pos - vec3(1, 0.5, 0);
 
+	//cout << "sun: " << sun_pos.x << sun_pos.y << sun_pos.z << "   ufo: " << ufo_pos.x << ufo_pos.y << ufo_pos.z << endl;
 	// tell window to render
 	onDisplay();
 	glutPostRedisplay();
