@@ -36,10 +36,13 @@ GLuint g_ShaderProgram = 0; //shader identifier
 GLuint g_bg_ShaderProgram = 0; //shader identifier
 GLuint g_moon_ShaderProgram = 0; //shader identifier
 GLuint g_ufo_ShaderProgram = 0; //shader identifier
+GLuint g_pilot_ShaderProgram = 0; //shader identifier
 GLuint g_Vao = 0; //vao
 GLuint g_ufo_Vao = 0; //vao
+GLuint g_pilot_Vao = 0; //vao
 GLuint g_NumTriangles = 0; //  Numbre of triangles we are painting.
 GLuint g_ufo_NumTriangles = 0; //  Numbre of triangles we are painting.
+GLuint g_pilot_NumTriangles = 0; //  Numbre of triangles we are painting.
 
 GLuint texture_id;
 GLuint texture_id_normal;
@@ -70,7 +73,7 @@ vec3 planet_pos(0, 0, 0);
 vec3 earth_pos(5, 0, 0);
 vec3 sun_pos(0.0, 0.0, 0.0);
 vec3 moon_pos(10, 0, 0);
-vec3 ufo_pos(3, 0, 0);
+vec3 ufo_pos(0, -0.3, 9);
 float earth_angle = 0;
 float sun_angle = 0;
 float moon_angle = 0;
@@ -140,10 +143,53 @@ void createGeometry()
 	createImage("moonnormal.bmp", &moon_texture_normal);
 }
 
+void createPilotGeometry()
+{
+	//load obj file
+	string inputfile = "piloto.obj";
+	vector<tinyobj::shape_t> shapes;
+	vector<tinyobj::material_t> materials;
+	string err;
+	bool ret = tinyobj::LoadObj(shapes, materials, err, inputfile.c_str());
+
+	//check for errors
+	cout << "# of shapes    : " << shapes.size() << endl;
+	if (!err.empty()) std::cerr << err << std::endl;
+
+	//get data
+	GLfloat* uvs = &(shapes[0].mesh.texcoords[0]);
+	GLuint uvs_size = shapes[0].mesh.texcoords.size() * sizeof(GLfloat);
+	GLfloat* normals = &(shapes[0].mesh.normals[0]);
+	GLuint normals_size = shapes[0].mesh.normals.size() * sizeof(GLfloat);
+	GLfloat* vertices = &(shapes[0].mesh.positions[0]);
+	GLuint vertices_size = shapes[0].mesh.positions.size() * sizeof(GLfloat);
+	GLuint* indices = &(shapes[0].mesh.indices[0]);
+	GLuint indices_size = shapes[0].mesh.indices.size() * sizeof(GLuint);
+	g_pilot_NumTriangles = shapes[0].mesh.indices.size() / 3;
+
+	// Create the VAO where we store all geometry (stored in g_Vao)
+	g_pilot_Vao = gl_createAndBindVAO();
+
+	//create vertex buffer for positions, colors, and indices
+	gl_createAndBindAttribute(vertices, vertices_size, g_ufo_ShaderProgram, "a_vertex", 3);
+	gl_createAndBindAttribute(uvs, uvs_size, g_ufo_ShaderProgram, "a_uv", 2);
+	gl_createAndBindAttribute(normals, normals_size, g_ufo_ShaderProgram, "a_normals", 3);
+	gl_createIndexBuffer(indices, indices_size);
+
+	//unbind everything
+	gl_unbindVAO();
+
+	createImage("ufo_diffuse.bmp", &ufo_texture_id);
+	createImage("ufo_normal.bmp", &ufo_texture_normal);
+	createImage("ufo_spec.bmp", &ufo_texture_spec);
+	createImage("ufo_diffuse_glow.bmp", &ufo_texture_light);
+
+}
+
 void createUFOGeometry()
 {
 	//load obj file
-	string inputfile = "ufo.obj";
+	string inputfile = "nave.obj";
 	vector<tinyobj::shape_t> shapes;
 	vector<tinyobj::material_t> materials;
 	string err;
@@ -168,9 +214,9 @@ void createUFOGeometry()
 	g_ufo_Vao = gl_createAndBindVAO();
 
 	//create vertex buffer for positions, colors, and indices
-	gl_createAndBindAttribute(vertices, vertices_size, g_ShaderProgram, "a_vertex", 3);
-	gl_createAndBindAttribute(uvs, uvs_size, g_ShaderProgram, "a_uv", 2);
-	gl_createAndBindAttribute(normals, normals_size, g_ShaderProgram, "a_normals", 3);
+	gl_createAndBindAttribute(vertices, vertices_size, g_ufo_ShaderProgram, "a_vertex", 3);
+	gl_createAndBindAttribute(uvs, uvs_size, g_ufo_ShaderProgram, "a_uv", 2);
+	gl_createAndBindAttribute(normals, normals_size, g_ufo_ShaderProgram, "a_normals", 3);
 	gl_createIndexBuffer(indices, indices_size);
 
 	//unbind everything
@@ -262,6 +308,9 @@ void drawEarth() {
 	glUseProgram(0);
 }
 
+// ------------------------------------------------------------------------------------------
+// Draw the moon
+// ------------------------------------------------------------------------------------------
 void drawMoon() {
 
 	// activate shader and VAO
@@ -292,7 +341,7 @@ void drawMoon() {
 	GLuint u_normal_matrix = glGetUniformLocation(g_moon_ShaderProgram, "u_normal_matrix");
 
 	//set MVP
-	moon_pos = vec3(3 * cos(moon_angle*0.01), 0, 3 * sin(moon_angle*0.01));
+	moon_pos = vec3(3 * cos(moon_angle*0.1), 0, 3 * sin(moon_angle*0.1));
 	mat4 translate_matrix = translate(translate_matrix_earth, moon_pos);
 	translate_matrix = scale(translate_matrix, vec3(0.5, 0.5, 0.5));
 	translate_matrix = rotate(translate_matrix, moon_angle * 3, vec3(0, 1, 0));
@@ -328,6 +377,9 @@ void drawMoon() {
 	glUseProgram(0);
 }
 
+// ------------------------------------------------------------------------------------------
+// Draw the sun
+// ------------------------------------------------------------------------------------------
 void drawSun() {
 
 	// activate shader and VAO
@@ -344,6 +396,7 @@ void drawSun() {
 	GLuint u_view = glGetUniformLocation(g_bg_ShaderProgram, "u_view");
 	GLuint u_projection = glGetUniformLocation(g_bg_ShaderProgram, "u_projection");
 	GLuint u_color = glGetUniformLocation(g_bg_ShaderProgram, "u_color");
+	GLuint u_transparency = glGetUniformLocation(g_bg_ShaderProgram, "u_transparency");
 
 	//set MVP
 	mat4 translate_matrix = translate(mat4(1.0f), sun_pos);
@@ -357,6 +410,7 @@ void drawSun() {
 	glUniformMatrix4fv(u_view, 1, GL_FALSE, glm::value_ptr(view_matrix));
 	glUniformMatrix4fv(u_projection, 1, GL_FALSE, glm::value_ptr(projection_matrix));
 	glUniform3f(u_color, 0.0, 1.0, 0.0);
+	glUniform1f(u_transparency, 1.0);
 
 
 	//bind VAO, draw, unbind
@@ -368,6 +422,9 @@ void drawSun() {
 	glUseProgram(0);
 }
 
+// ------------------------------------------------------------------------------------------
+// Draw the milkyway background
+// ------------------------------------------------------------------------------------------
 void drawMilkyWay() {
 
 	// activate shader and VAO
@@ -384,6 +441,8 @@ void drawMilkyWay() {
 	GLuint u_view = glGetUniformLocation(g_bg_ShaderProgram, "u_view");
 	GLuint u_projection = glGetUniformLocation(g_bg_ShaderProgram, "u_projection");
 	GLuint u_color = glGetUniformLocation(g_bg_ShaderProgram, "u_color");
+	GLuint u_transparency = glGetUniformLocation(g_bg_ShaderProgram, "u_transparency");
+
 
 	//set MVP
 	mat4 translate_matrix = translate(mat4(1.0f), cam_pos);
@@ -396,6 +455,7 @@ void drawMilkyWay() {
 	glUniformMatrix4fv(u_view, 1, GL_FALSE, glm::value_ptr(view_matrix));
 	glUniformMatrix4fv(u_projection, 1, GL_FALSE, glm::value_ptr(projection_matrix));
 	glUniform3f(u_color, 0.0, 1.0, 0.0);
+	glUniform1f(u_transparency, 1.0);
 	
 
 	//bind VAO, draw, unbind
@@ -407,6 +467,75 @@ void drawMilkyWay() {
 	glUseProgram(0);
 }
 
+// ------------------------------------------------------------------------------------------
+// Draw the pilot from the ufo
+// ------------------------------------------------------------------------------------------
+void drawPilot() {
+
+	// activate shader and VAO
+	glUseProgram(g_pilot_ShaderProgram);
+
+	GLuint u_texture = glGetUniformLocation(g_pilot_ShaderProgram, "u_texture");
+	glUniform1i(u_texture, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ufo_texture_light);
+
+
+	//find uniform locations (note this could be done once only, 
+	//using globals variables or a struct, and after compiling the shader
+	GLuint u_model = glGetUniformLocation(g_pilot_ShaderProgram, "u_model");
+	GLuint u_view = glGetUniformLocation(g_pilot_ShaderProgram, "u_view");
+	GLuint u_projection = glGetUniformLocation(g_pilot_ShaderProgram, "u_projection");
+	GLuint u_color = glGetUniformLocation(g_pilot_ShaderProgram, "u_color");
+	GLuint u_light_dir = glGetUniformLocation(g_pilot_ShaderProgram, "u_light_dir");
+	GLuint u_light_color = glGetUniformLocation(g_pilot_ShaderProgram, "u_light_color");
+	GLuint u_cam_pos = glGetUniformLocation(g_pilot_ShaderProgram, "u_cam_pos");
+	GLuint u_shininess = glGetUniformLocation(g_pilot_ShaderProgram, "u_shininess");
+	GLuint u_ambient = glGetUniformLocation(g_pilot_ShaderProgram, "u_ambient");
+	GLuint u_normal_matrix = glGetUniformLocation(g_pilot_ShaderProgram, "u_normal_matrix");
+	GLuint u_transparency = glGetUniformLocation(g_pilot_ShaderProgram, "u_transparency");
+
+	//set MVP
+	//earth_pos = vec3(10 * cos(earth_angle*0.01), 0, 10 * sin(earth_angle*0.01));
+	mat4 translate_matrix = translate(mat4(1.0f), ufo_pos);
+	translate_matrix = scale(translate_matrix, vec3(0.1, 0.1, 0.1));
+	//translate_matrix = rotate(translate_matrix, earth_angle * 2, vec3(0, 1, 0));
+	//vec3 new_pos(10, 0, 10);
+	//translate_matrix = translate(translate_matrix, new_pos);
+
+
+	mat4 view_matrix = lookAt(cam_pos, cam_target, vec3(0, 1, 0)); //cam_pos and cam_target set in update!
+	mat4 projection_matrix = glm::perspective(60.0f, ((float)g_ViewportWidth / (float)g_ViewportHeight), 0.1f, 500.0f);
+	mat3 normal_matrix = inverseTranspose((mat3(translate_matrix_earth)));
+	g_light_dir = sun_pos - ufo_pos;
+
+	//send all values to shader
+	glUniformMatrix4fv(u_model, 1, GL_FALSE, glm::value_ptr(translate_matrix));
+	glUniformMatrix4fv(u_view, 1, GL_FALSE, glm::value_ptr(view_matrix));
+	glUniformMatrix4fv(u_projection, 1, GL_FALSE, glm::value_ptr(projection_matrix));
+	glUniform3f(u_color, 0.0, 1.0, 0.0);
+	glUniform3f(u_light_dir, g_light_dir.x, g_light_dir.y, g_light_dir.z);
+	glUniform3f(u_light_color, 1.0, 1.0, 1.0);
+	glUniform3f(u_cam_pos, cam_pos.x, cam_pos.y, cam_pos.z);
+	glUniform1f(u_shininess, 30.0);
+	glUniform1f(u_ambient, 0.1);
+	glUniformMatrix3fv(u_normal_matrix, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+	glUniform1f(u_transparency, 0.4);
+
+
+
+	//bind VAO, draw, unbind
+	gl_bindVAO(g_pilot_Vao);
+	glDrawElements(GL_TRIANGLES, 3 * g_pilot_NumTriangles, GL_UNSIGNED_INT, 0);
+	gl_unbindVAO();
+
+	//unbind shader
+	glUseProgram(0);
+}
+
+// ------------------------------------------------------------------------------------------
+// Draw the ufo
+// ------------------------------------------------------------------------------------------
 void drawUfo() {
 
 	// activate shader and VAO
@@ -449,7 +578,7 @@ void drawUfo() {
 	//set MVP
 	//earth_pos = vec3(10 * cos(earth_angle*0.01), 0, 10 * sin(earth_angle*0.01));
 	mat4 translate_matrix = translate(mat4(1.0f), ufo_pos);
-	translate_matrix = scale(translate_matrix, vec3(0.005, 0.005, 0.005));
+	translate_matrix = scale(translate_matrix, vec3(0.1, 0.1, 0.1));
 	//translate_matrix = rotate(translate_matrix, earth_angle * 2, vec3(0, 1, 0));
 	//vec3 new_pos(10, 0, 10);
 	//translate_matrix = translate(translate_matrix, new_pos);
@@ -460,7 +589,7 @@ void drawUfo() {
 	mat3 normal_matrix = inverseTranspose((mat3(translate_matrix_earth)));
 
 	g_light_dir = sun_pos - ufo_pos;
-	cout << "light dir: " << g_light_dir.x << g_light_dir.y << g_light_dir.z << endl;
+
 
 	//send all values to shader
 	glUniformMatrix4fv(u_model, 1, GL_FALSE, glm::value_ptr(translate_matrix));
@@ -477,12 +606,13 @@ void drawUfo() {
 
 	//bind VAO, draw, unbind
 	gl_bindVAO(g_ufo_Vao);
-	glDrawElements(GL_TRIANGLES, 3 * g_NumTriangles, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 3 * g_ufo_NumTriangles, GL_UNSIGNED_INT, 0);
 	gl_unbindVAO();
 
 	//unbind shader
 	glUseProgram(0);
 }
+
 // ------------------------------------------------------------------------------------------
 // This function actually draws to screen
 // ------------------------------------------------------------------------------------------
@@ -492,6 +622,8 @@ void onDisplay()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glCullFace(GL_FRONT);
 
 	drawMilkyWay();
@@ -499,6 +631,8 @@ void onDisplay()
 	//SUN
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glCullFace(GL_BACK);
 
 	drawSun();
@@ -524,6 +658,16 @@ void onDisplay()
 
 	drawUfo();
 
+	//PILOT
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glCullFace(GL_BACK);
+	
+
+	drawPilot();
+
 	// Swap the buffers so back buffer is on screen 
 	glutSwapBuffers();
 }
@@ -543,16 +687,21 @@ void loadResources()
 	Shader simpleShader("shader.vert", "shader.frag");
 	Shader bg_simpleShader("shader.vert", "bg_shader.frag");
 	Shader moon_simpleShader("shader.vert", "moon_shader.frag");
-	Shader ufo_simpleShader("shader.vert", "ufo_shader.frag");
+	Shader ufo_simpleShader("ufo_shader.vert", "ufo_shader.frag");
+	Shader pilot_simpleShader("ufo_shader.vert", "bg_shader.frag");
 #endif
 	g_ShaderProgram = simpleShader.program;
 	g_bg_ShaderProgram = bg_simpleShader.program;
 	g_moon_ShaderProgram = moon_simpleShader.program;
 	g_ufo_ShaderProgram = ufo_simpleShader.program;
+	g_pilot_ShaderProgram = pilot_simpleShader.program;
 
 	// create geometry for teapot
+	
 	createGeometry();
 	createUFOGeometry();
+	createPilotGeometry();
+	
 }
 
 // --------------------------------------------------------------
@@ -577,6 +726,16 @@ void onKeyDown(unsigned char key, int x, int y)
 		break;
 	case 'd':
 		key_flags[3] = 1;
+		break;
+	case '+':
+		if (MOVE_SPEED < 0.1) {
+			MOVE_SPEED += 0.01;
+		}
+		break;
+	case '-':
+		if (MOVE_SPEED > 0.01) {
+			MOVE_SPEED -= 0.01;
+		}
 		break;
 	}
 }
@@ -669,10 +828,10 @@ void update() {
 		cam_target = cam_target - (side*MOVE_SPEED);
 	}
 
-	earth_angle = earth_angle + 0.1;
+	earth_angle = earth_angle + 0.3;
 	sun_angle = sun_angle + 0.05;
-	moon_angle = moon_angle + 0.1;
-	//ufo_pos = cam_pos - vec3(1, 0.5, 0);
+	moon_angle = moon_angle + 0.3;
+	ufo_pos = cam_pos + final_look_vector - vec3(0, 0.5, 0);
 
 	//cout << "sun: " << sun_pos.x << sun_pos.y << sun_pos.z << "   ufo: " << ufo_pos.x << ufo_pos.y << ufo_pos.z << endl;
 	// tell window to render
@@ -730,6 +889,7 @@ int main(int argc, char* argv[]) {
 	glutPassiveMotionFunc(onMouseMove);
 	glutMotionFunc(onMouseMoveClick);
 	glutIdleFunc(update);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 
 	//start everything up
 	glutMainLoop();
